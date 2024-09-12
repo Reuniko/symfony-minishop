@@ -23,3 +23,19 @@ services:
       - ./src:/var/www/html:rw
     networks:
       - testnetwork
+
+  ## база данных
+  postgres:
+    container_name: container-database
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: minishop
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
