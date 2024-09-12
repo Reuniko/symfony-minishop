@@ -1,0 +1,5 @@
+{
+    "require-dev": {
+        "symfony/symfony": "^7.1"
+    }
+}
