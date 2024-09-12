@@ -1,41 +1,89 @@
 <?php
 
-namespace AppEntity;
+namespace App\Entity;
 
-use DoctrineORMMapping as ORM;
+use App\Repository\ProductRepository;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping as ORM;
 
-/**
- * @ORMEntity()
- * @ORMTable(name="products")
- */
+#[ORM\Entity(repositoryClass: ProductRepository::class)]
+#[ORM\Table(name: "products")]
 class Product
 {
-    /**
-     * @ORMId
-     * @ORMGeneratedValue
-     * @ORMColumn(type="integer")
-     */
-    private $id;
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
 
-    /**
-     * @ORMColumn(type="string", length=255)
-     */
-    private $name;
+    #[ORM\Column(length: 255)]
+    private ?string $name = null;
 
-    /**
-     * @ORMColumn(type="string", length=255)
-     */
-    private $image;
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $image = null;
 
-    /**
-     * @ORMColumn(type="decimal", scale=2)
-     */
-    private $price;
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 0)]
+    private ?string $price = null;
 
-    /**
-     * @ORMColumn(type="decimal", scale=2)
-     */
-    private $weight;
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 0)]
+    private ?string $weight = null;
 
-    // Геттеры и сеттеры...
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function setId(int $id): static
+    {
+        $this->id = $id;
+
+        return $this;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): static
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
+    public function getImage(): ?string
+    {
+        return $this->image;
+    }
+
+    public function setImage(?string $image): static
+    {
+        $this->image = $image;
+
+        return $this;
+    }
+
+    public function getPrice(): ?string
+    {
+        return $this->price;
+    }
+
+    public function setPrice(string $price): static
+    {
+        $this->price = $price;
+
+        return $this;
+    }
+
+    public function getWeight(): ?string
+    {
+        return $this->weight;
+    }
+
+    public function setWeight(string $weight): static
+    {
+        $this->weight = $weight;
+
+        return $this;
+    }
 }

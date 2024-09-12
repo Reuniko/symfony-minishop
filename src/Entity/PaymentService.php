@@ -1,28 +1,43 @@
 <?php
 
-// src/Entity/PaymentService.php
+namespace App\Entity;
 
-namespace AppEntity;
+use App\Repository\PaymentServiceRepository;
+use Doctrine\ORM\Mapping as ORM;
 
-use DoctrineORMMapping as ORM;
-
-/**
- * @ORMEntity()
- * @ORMTable(name="payment_services")
- */
+#[ORM\Entity(repositoryClass: PaymentServiceRepository::class)]
+#[ORM\Table(name: "payment_services")]
 class PaymentService
 {
-    /**
-     * @ORMId
-     * @ORMGeneratedValue
-     * @ORMColumn(type="integer")
-     */
-    private $id;
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
 
-    /**
-     * @ORMColumn(type="string", length=255)
-     */
-    private $name;
+    #[ORM\Column(length: 255)]
+    private ?string $name = null;
 
-    // Геттеры и сеттеры...
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function setId(int $id): static
+    {
+        $this->id = $id;
+
+        return $this;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): static
+    {
+        $this->name = $name;
+
+        return $this;
+    }
 }
