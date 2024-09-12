@@ -33,14 +33,14 @@ class Cart
     #[ORM\Column(type: 'integer', nullable: true)]
     private ?int $deliveryMaxDays = null;
 
-    #[ORM\Column(type: 'datetime')]
-    private \DateTimeImmutable $createdAt;
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column(type: 'boolean')]
     private bool $isPay;
 
-    #[ORM\Column(type: 'integer')]
-    private int $totalPaymentSum;
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $totalPaymentSum = null;
 
     public function getId(): ?int
     {

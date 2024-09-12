@@ -18,8 +18,8 @@ class Product
     #[ORM\Column(type: 'string', length: 255)]
     private string $name;
 
-    #[ORM\Column(type: 'text')]
-    private string $image;
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $image = null;
 
     #[ORM\Column(type: 'integer')]
     private int $price;
