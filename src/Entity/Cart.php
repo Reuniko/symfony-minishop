@@ -12,32 +12,35 @@ class Cart
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: 'integer')]
+    private int $id;
 
-    #[ORM\Column]
-    private ?int $userId = null;
+    #[ORM\Column(type: 'integer')]
+    private int $userId;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(type: 'integer', nullable: true)]
     private ?int $deliveryServiceId = null;
 
-    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 0, nullable: true)]
-    private ?string $deliveryPrice = null;
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $paymentServiceId = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $deliveryPrice = null;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
     private ?int $deliveryMinDays = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(type: 'integer', nullable: true)]
     private ?int $deliveryMaxDays = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTimeInterface $createdAt = null;
+    #[ORM\Column(type: 'datetime')]
+    private \DateTimeImmutable $createdAt;
 
-    #[ORM\Column]
-    private ?bool $isPay = null;
+    #[ORM\Column(type: 'boolean')]
+    private bool $isPay;
 
-    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 0, nullable: true)]
-    private ?string $totalPaymentSum = null;
+    #[ORM\Column(type: 'integer')]
+    private int $totalPaymentSum;
 
     public function getId(): ?int
     {
