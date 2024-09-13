@@ -15,13 +15,15 @@ class Cart
     #[ORM\Column(type: 'integer')]
     private int $id;
 
-    #[ORM\Column(type: 'integer')]
+    #[ORM\Column(type: 'integer', nullable: false)]
     private int $userId;
 
     #[ORM\Column(type: 'integer', nullable: true)]
+    #[ORM\ManyToOne(targetEntity: DeliveryService::class)]
     private ?int $deliveryServiceId = null;
 
     #[ORM\Column(type: 'integer', nullable: true)]
+    #[ORM\ManyToOne(targetEntity: PaymentService::class)]
     private ?int $paymentServiceId = null;
 
     #[ORM\Column(type: 'integer', nullable: true)]
@@ -33,11 +35,11 @@ class Cart
     #[ORM\Column(type: 'integer', nullable: true)]
     private ?int $deliveryMaxDays = null;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
+    #[ORM\Column(type: 'datetime', nullable: false, options: ['default' => 'now()'])]
     private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\Column(type: 'boolean')]
-    private bool $isPay;
+    #[ORM\Column(type: 'smallint')]
+    private int $isPay;
 
     #[ORM\Column(type: 'integer', nullable: true)]
     private ?int $totalPaymentSum = null;
