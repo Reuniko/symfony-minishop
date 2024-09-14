@@ -44,12 +44,25 @@ class RegistrationController extends AbstractController
             ]);
         }
 
-        $user = new \App\Entity\User();
-        $user->setEmail($email);
-        $user->setPassword($passwordHasher->hashPassword($user, $password));
+        // Проверка, существует ли пользователь с таким email
+        $existingUser = $entityManager->getRepository(\App\Entity\User::class)->findOneBy(['email' => $email]);
+        if ($existingUser) {
+            return $this->render('registration/register.html.twig', [
+                'error' => 'Пользователь с таким email уже существует.',
+            ]);
+        }
 
-        $entityManager->persist($user);
-        $entityManager->flush();
+        try {
+            $user = new \App\Entity\User();
+            $user->setEmail($email);
+            $user->setPassword($passwordHasher->hashPassword($user, $password));
+            $entityManager->persist($user);
+            $entityManager->flush();
+        } catch (\Exception $error) {
+            return $this->render('registration/register.html.twig', [
+                'error' => 'Ошибка регистрации: ' . $error->getMessage(),
+            ]);
+        }
 
         return $this->redirectToRoute('app_login');
     }

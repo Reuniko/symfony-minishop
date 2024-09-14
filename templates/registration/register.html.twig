@@ -5,6 +5,10 @@
 {% block body %}
     <h1>Регистрация</h1>
 
+    {% if error is defined %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
     <form method="POST" action="{{ path('app_register') }}">
         <div class="form-group">
             <label for="email">Email:</label>
