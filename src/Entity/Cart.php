@@ -36,13 +36,19 @@ class Cart
     private ?int $deliveryMaxDays = null;
 
     #[ORM\Column(type: 'datetime', nullable: false, options: ['default' => 'now()'])]
-    private ?\DateTimeImmutable $createdAt = null;
+    private ?\DateTime $createdAt = null;
 
     #[ORM\Column(type: 'smallint')]
     private int $isPay;
 
     #[ORM\Column(type: 'integer', nullable: true)]
     private ?int $totalPaymentSum = null;
+
+    public function __construct()
+    {
+        $this->createdAt = new \DateTime("now");
+    }
+
 
     public function getId(): ?int
     {
