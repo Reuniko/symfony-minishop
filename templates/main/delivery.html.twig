@@ -1,0 +1,35 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Доставка{% endblock %}
+
+{% block body %}
+    <div class="container mt-5">
+        <div><a href="{{ path('app_cart') }}" class="">Назад в корзину</a></div>
+
+        <h1>Выберите способ доставки</h1>
+        <hr>
+
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>Название службы</th>
+                <th>Стоимость</th>
+                <th>Срок доставки</th>
+                <th>Выбор</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for deliveryService in deliveryServices %}
+                <tr>
+                    <td>{{ deliveryService.name }}</td>
+                    <td></td>
+                    <td></td>
+                    <td>
+                        <button class="btn btn-success">Выбрать</button>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

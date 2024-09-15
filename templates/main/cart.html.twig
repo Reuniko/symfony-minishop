@@ -38,7 +38,8 @@
                     <td>{{ item.product_weight }} кг</td>
                     <td>{{ item.amount * item.product_price }} руб.</td>
                     <td>
-                        <form method="POST" action="{{ path('app_cart_delete', {'cartProductId': item.cart_product_id}) }}">
+                        <form method="POST"
+                              action="{{ path('app_cart_delete', {'cartProductId': item.cart_product_id}) }}">
                             <input type="hidden" name="cartProductId" value="{{ item.cart_product_id }}">
                             <button type="submit" class="btn btn-danger">Удалить</button>
                         </form>
@@ -54,7 +55,9 @@
             </div>
             <div class="col-md-4">
                 {% if totalPrice > 0 %}
-                <button class="btn btn-primary btn-lg btn-block">Оформить заказ</button>
+                    <a href="{{ path('app_cart_delivery') }}" class="btn btn-primary btn-lg btn-block">
+                        Выбрать способ доставки
+                    </a>
                 {% endif %}
             </div>
         </div>

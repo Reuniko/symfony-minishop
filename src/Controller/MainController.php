@@ -7,6 +7,7 @@ use App\Entity\CartProduct;
 use App\Entity\Product;
 use App\Repository\CartProductRepository;
 use App\Repository\CartRepository;
+use App\Repository\DeliveryServiceRepository;
 use App\Repository\ProductRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -17,9 +18,10 @@ use Symfony\Component\Routing\Annotation\Route;
 class MainController extends AbstractController
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
-        private CartRepository         $cartRepository,
-        private CartProductRepository  $cartProductRepository,
+        private EntityManagerInterface    $entityManager,
+        private CartRepository            $cartRepository,
+        private CartProductRepository     $cartProductRepository,
+        private DeliveryServiceRepository $deliveryServiceRepository,
     )
     {
 
@@ -169,7 +171,7 @@ class MainController extends AbstractController
         }
     }
 
-    #[Route('/cart', name: 'app_cart', methods: ['GET'])]
+    #[Route('/checkout', name: 'app_cart', methods: ['GET'])]
     public function app_cart(
         Request                $request,
         ProductRepository      $productRepository,
@@ -231,7 +233,7 @@ class MainController extends AbstractController
         return $result;
     }
 
-    #[Route('/cart/delete/{cartProductId}', name: 'app_cart_delete', methods: ['POST'])]
+    #[Route('/checkout/delete/{cartProductId}', name: 'app_cart_delete', methods: ['POST'])]
     public function deleteCartItem(int $cartProductId): Response
     {
         if (!$this->getUser()) {
@@ -255,5 +257,26 @@ class MainController extends AbstractController
             return $this->redirectToRoute('app_cart', ['error' => $error->getMessage()]);
         }
         return $this->redirectToRoute('app_cart');
+    }
+
+    #[Route('/checkout/delivery/', name: 'app_cart_delivery')]
+    public function app_cart_delivery(Request $request): Response
+    {
+        if (!$this->getUser()) {
+            return $this->redirectToRoute('app_main');
+        }
+
+        $referrer = $request->headers->get('referer');
+        $this->debug($referrer);
+        if (!$referrer || !str_contains($referrer, '/checkout')) {
+            return $this->redirectToRoute('app_cart');
+        }
+
+        // Fetch delivery services from the database
+        $deliveryServices = $this->deliveryServiceRepository->findAll();
+
+        return $this->render('main/delivery.html.twig', [
+            'deliveryServices' => $deliveryServices,
+        ]);
     }
 }
