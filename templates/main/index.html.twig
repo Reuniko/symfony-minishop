@@ -6,6 +6,10 @@
     <div class="container">
         <h1 class="text-center">Наши товары</h1>
 
+        {% if message is defined and message is not empty %}
+            <div class="alert alert-success">{{ message }}</div>
+        {% endif %}
+
         <div class="row">
             {% for product in products %}
                 <div class="col-md-4 mb-4">
