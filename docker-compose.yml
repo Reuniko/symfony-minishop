@@ -25,6 +25,9 @@ services:
       - ./src:/var/www/html:rw
     networks:
       - testnetwork
+    entrypoint: ["sh", "entrypoint.sh"]
+    ports:
+      - "8008:80"
 
   ## база данных
   container-database:
