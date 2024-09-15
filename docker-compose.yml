@@ -13,6 +13,8 @@ services:
     entrypoint: ["sh", "entrypoint.sh"]
     networks:
       - testnetwork
+    ports:
+      - "8888:80"
 
   ## сервис-контейнер для вашего кода. 
   ## При необходимости донастройте его по вашим потребностям

@@ -22,8 +22,14 @@
             {% for deliveryService in deliveryServices %}
                 <tr>
                     <td>{{ deliveryService.name }}</td>
-                    <td></td>
-                    <td></td>
+                    <td>{{ deliveryService.price }}</td>
+                    <td>
+                        {{ deliveryService.minDays }}
+                        {% if deliveryService.maxDays > deliveryService.minDays %}
+                            - {{ deliveryService.maxDays }}
+                        {% endif %}
+                        дней
+                    </td>
                     <td>
                         <button class="btn btn-success">Выбрать</button>
                     </td>

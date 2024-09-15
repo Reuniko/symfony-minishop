@@ -14,6 +14,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+
 
 class MainController extends AbstractController
 {
@@ -22,6 +24,7 @@ class MainController extends AbstractController
         private CartRepository            $cartRepository,
         private CartProductRepository     $cartProductRepository,
         private DeliveryServiceRepository $deliveryServiceRepository,
+        private HttpClientInterface       $httpClient,
     )
     {
 
@@ -267,13 +270,54 @@ class MainController extends AbstractController
         }
 
         $referrer = $request->headers->get('referer');
-        $this->debug($referrer);
         if (!$referrer || !str_contains($referrer, '/checkout')) {
             return $this->redirectToRoute('app_cart');
         }
 
-        // Fetch delivery services from the database
         $deliveryServices = $this->deliveryServiceRepository->findAll();
+
+        foreach ($deliveryServices as $deliveryService) {
+            $apiEndpoint = "http://localhost:8888/delivery/{$deliveryService->getCode()}";
+            $requestData = [];
+            $headers = ['Content-Type' => 'application/json'];
+            switch ($deliveryService->getCode()) {
+                case 'cdek':
+                    $requestData = [
+                        'username' => 'cdek-user-01',
+                        'password' => '123456789',
+                        'weight' => '5',
+                    ];
+                    break;
+                case 'fivepost':
+                    $headers['apiKey'] = '448ed7416fce2cb66c285d182b1ba3df1e90016d';
+                    $requestData = [
+                        'weight' => '50',
+                    ];
+                    break;
+            }
+
+            $response = $this->httpClient->request(
+                'POST',
+                $apiEndpoint,
+                [
+                    'headers' => $headers,
+                    'body' => json_encode($requestData),
+                    'timeout' => 1,
+                ]
+            );
+
+            $responseData = json_decode($response->getContent(), true);
+
+            if ($responseData['status'] === true || $responseData['status'] === 200) {
+                $deliveryService->price = $responseData['data']['price'];
+                $deliveryService->minDays = $responseData['data']['delivery_min_days'];
+                $deliveryService->maxDays = $responseData['data']['delivery_max_days'];
+            } else {
+                $this->addFlash('error', 'Не удалось получить данные о доставке от ' . $deliveryService->getName());
+            }
+        }
+
+        $this->debug($deliveryServices, '$deliveryServices');
 
         return $this->render('main/delivery.html.twig', [
             'deliveryServices' => $deliveryServices,

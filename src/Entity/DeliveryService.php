@@ -20,6 +20,10 @@ class DeliveryService
     #[ORM\Column(type: 'string', length: 255)]
     private string $name;
 
+    public string $price;
+    public string $minDays;
+    public string $maxDays;
+
     public function getId(): ?int
     {
         return $this->id;
