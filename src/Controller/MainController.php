@@ -16,6 +16,30 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class MainController extends AbstractController
 {
+    public function __construct(
+        private EntityManagerInterface $entityManager,
+        private CartRepository         $cartRepository
+    )
+    {
+
+    }
+
+    private function getUserCart(): Cart
+    {
+        $cart = $this->cartRepository->findOneBy([
+            'isPay' => 0,
+            'userId' => $this->getUser()->getId(),
+        ]);
+        if (empty($cart)) {
+            $cart = new Cart();
+            $cart->setPay(false);
+            $cart->setUserId($this->getUser()->getId());
+            $this->entityManager->persist($cart);
+            $this->entityManager->flush();
+        }
+        return $cart;
+    }
+
     #[Route('/', name: 'app_main', methods: ['GET'])]
     public function index(
         Request           $request,
@@ -27,6 +51,7 @@ class MainController extends AbstractController
             'products' => $products,
         ]);
     }
+
 
     #[Route('/', name: 'app_add_to_cart', methods: ['POST'])]
     public function add_to_cart(
@@ -50,22 +75,8 @@ class MainController extends AbstractController
             $product = $productRepository->find($productId);
 
             if ($product) {
-                // Логика добавления товара в корзину
-                $cart = $cartRepository->findOneBy([
-                    'isPay' => 0,
-                    'userId' => $this->getUser()->getId(),
-                ]);
-                //$this->debug($user_cart);
-                //$this->debug($this->getUser()->getId());
-                if (empty($cart)) {
-                    $cart = new Cart();
-                    $cart->setPay(false);
-                    $cart->setUserId($this->getUser()->getId());
-                    $entityManager->persist($cart);
-                    $entityManager->flush();
-                }
-                //$this->debug($user_cart);
-                //$this->debug($product);
+
+                $cart = $this->getUserCart();
 
                 /**@var CartProduct $cartProduct */
                 $cartProduct = $cartProductRepository->findOneBy([
@@ -97,8 +108,125 @@ class MainController extends AbstractController
         ]);
     }
 
-    public function debug($info)
+    /**
+     * Доступные способы отладки ($mode):
+     * - textarea - невидимая textarea, отображается по нажатию клавиш alt + TILDE (по умолчанию)
+     * - console - выводится в консоль браузера
+     * - log - записывается в файл
+     * - email - отправляется на почту
+     *
+     * @param mixed $data переменная для отладки
+     * @param string $title название переменной (не обязательно)
+     * @param string $mode способ отладки (не обязательно)
+     * @param string $target путь отправки: имя файла или почтовый адрес (не обязательно)
+     */
+    public function debug($data = [], $title = '', $mode = 'textarea', $target = '/debug.txt')
     {
-        echo "<xmp>" . print_r($info, true) . "</xmp>";
+        if ($mode === 'textarea') {
+            echo "<textarea class='debug' data-debug='{$title}' style='
+				display: none; 
+				resize: both; 
+				position: relative; 
+				z-index: 99999; 
+				border: 1px green dashed;
+				width: auto;
+				'
+			>{$title}=" . htmlspecialchars(print_r($data, true)) . "</textarea>";
+            static $need_js = true;
+            if ($need_js) {
+                $need_js = false;
+                ?>
+                <script>
+                    (function () {
+                        if (typeof NodeList.prototype.forEach === "function") return false;
+                        NodeList.prototype.forEach = Array.prototype.forEach;
+                    })();
+                    if (!window.fls_debug) {
+                        document.addEventListener('keydown', function (event) {
+                            // alt + TILDE
+                            if ((event.altKey || event.ctrlKey) && event.keyCode === 192) {
+                                var debug = document.querySelectorAll('.debug');
+                                debug.forEach(function (element) {
+                                    element.style.display = (element.style.display == 'none') ? 'block' : 'none';
+                                });
+                            }
+                        });
+                        window.fls_debug = true;
+                    }
+                </script>
+                <?php
+            }
+        }
+        if ($mode === 'console') {
+            echo "<script>console.log('{$title}', " . json_encode($data, true) . ");</script>";
+        }
+        if ($mode === 'log') {
+            file_put_contents($_SERVER['DOCUMENT_ROOT'] . $target, "\r\n" . str_repeat('-', 50) . "\r\n" . $title . '=' . print_r($data, true), FILE_APPEND);
+        }
+        if ($mode === 'email') {
+            mail($target, "debug from {$_SERVER['SERVER_NAME']}", $title . '=' . print_r($data, true));
+        }
+    }
+
+    #[Route('/cart', name: 'app_cart', methods: ['GET'])]
+    public function app_cart(
+        Request                $request,
+        ProductRepository      $productRepository,
+        CartRepository         $cartRepository,
+        EntityManagerInterface $entityManager,
+        CartProductRepository  $cartProductRepository,
+    ): Response
+    {
+        if (!$this->getUser()) {
+            return $this->redirectToRoute('app_home');
+        }
+
+        $message = '';
+
+        $cart = $this->getUserCart();
+        $cartProducts = $this->getCartProducts($cart->getId());
+
+        //$this->debug($cart);
+        $this->debug($cartProducts);
+
+        $totalPrice = 0;
+        foreach ($cartProducts as $cartProduct) {
+            $totalPrice += $cartProduct['product_price'] * $cartProduct['amount'];
+        }
+
+        return $this->render('main\\cart.html.twig', [
+            'cart' => $cart,
+            'cartProducts' => $cartProducts,
+            'message' => $message,
+            'totalPrice' => $totalPrice,
+        ]);
+    }
+
+    private function getCartProducts(int $cartId): array
+    {
+        $queryBuilder = $this->entityManager->createQueryBuilder();
+        $queryBuilder
+            ->select('
+                cp.id AS cart_product_id,
+                cp.amount,
+                p.id AS product_id,
+                p.name AS product_name,
+                p.price AS product_price,
+                p.weight AS product_weight
+            ')
+            ->from('App\Entity\CartProduct', 'cp')
+            //->leftJoin('cp.product', 'p') // no idea
+            ->leftJoin(
+                'App\Entity\Product',
+                'p',
+                \Doctrine\ORM\Query\Expr\Join::WITH,
+                'cp.productId = p.id'
+            )
+            ->where('cp.cartId = :cartId')
+            ->setParameter('cartId', $cartId);
+
+        $result = $queryBuilder->getQuery()->getResult();
+
+        return $result;
     }
 }

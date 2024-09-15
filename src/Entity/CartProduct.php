@@ -16,10 +16,12 @@ class CartProduct
 
     #[ORM\Column]
     #[ORM\ManyToOne(targetEntity: Cart::class)]
+    #[ORM\JoinColumn(nullable: false)]
     private ?int $cartId = null;
 
     #[ORM\Column]
     #[ORM\ManyToOne(targetEntity: Product::class)]
+    #[ORM\JoinColumn(nullable: false)]
     private ?int $productId = null;
 
     #[ORM\Column]
