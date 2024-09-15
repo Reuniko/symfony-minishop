@@ -12,6 +12,9 @@
             <div class="alert alert-success">{{ message }}</div>
         {% endif %}
 
+        {% if error is defined and error is not empty %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
 
         <table class="table table-striped">
             <thead>
@@ -34,7 +37,12 @@
                     <td>{{ item.product_price }} руб.</td>
                     <td>{{ item.product_weight }} кг</td>
                     <td>{{ item.amount * item.product_price }} руб.</td>
-                    <td><button class="btn btn-danger">Удалить</button></td>
+                    <td>
+                        <form method="POST" action="{{ path('app_cart_delete', {'cartProductId': item.cart_product_id}) }}">
+                            <input type="hidden" name="cartProductId" value="{{ item.cart_product_id }}">
+                            <button type="submit" class="btn btn-danger">Удалить</button>
+                        </form>
+                    </td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -45,7 +53,9 @@
                 <p>Общая сумма: {{ totalPrice }} руб.</p>
             </div>
             <div class="col-md-4">
+                {% if totalPrice > 0 %}
                 <button class="btn btn-primary btn-lg btn-block">Оформить заказ</button>
+                {% endif %}
             </div>
         </div>
     </div>

@@ -18,7 +18,8 @@ class MainController extends AbstractController
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private CartRepository         $cartRepository
+        private CartRepository         $cartRepository,
+        private CartProductRepository  $cartProductRepository,
     )
     {
 
@@ -178,7 +179,7 @@ class MainController extends AbstractController
     ): Response
     {
         if (!$this->getUser()) {
-            return $this->redirectToRoute('app_home');
+            return $this->redirectToRoute('app_main');
         }
 
         $message = '';
@@ -228,5 +229,31 @@ class MainController extends AbstractController
         $result = $queryBuilder->getQuery()->getResult();
 
         return $result;
+    }
+
+    #[Route('/cart/delete/{cartProductId}', name: 'app_cart_delete', methods: ['POST'])]
+    public function deleteCartItem(int $cartProductId): Response
+    {
+        if (!$this->getUser()) {
+            return $this->redirectToRoute('app_main');
+        }
+        try {
+            $cartProduct = $this->cartProductRepository->find($cartProductId);
+            if (!$cartProduct) {
+                throw new \Exception("Позиция в корзине не найдена");
+            }
+            $cart = $this->cartRepository->findOneBy([
+                'userId' => $this->getUser()->getId(),
+                'isPay' => 0,
+            ]);
+            if (empty($cart)) {
+                throw new \Exception("Корзина не найдена");
+            }
+            $this->entityManager->remove($cartProduct);
+            $this->entityManager->flush();
+        } catch (\Exception $error) {
+            return $this->redirectToRoute('app_cart', ['error' => $error->getMessage()]);
+        }
+        return $this->redirectToRoute('app_cart');
     }
 }
