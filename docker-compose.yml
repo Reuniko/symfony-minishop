@@ -21,11 +21,12 @@ services:
   container-testcase:
     container_name: container-testcase
     build: .docker/testcase
+    #entrypoint: ["sh", "entrypoint.sh"]
+    #entrypoint: ["/var/www/html/entrypoint.sh"]
     volumes:
       - ./src:/var/www/html:rw
     networks:
       - testnetwork
-    entrypoint: ["sh", "entrypoint.sh"]
     ports:
       - "8008:80"
 
