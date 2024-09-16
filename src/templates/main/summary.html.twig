@@ -1,0 +1,39 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Подтверждение заказа{% endblock %}
+
+{% block body %}
+    <div class="container mt-5">
+        <h1>Ваш заказ №{{ cart.id }}</h1>
+
+        <h2>Товары в заказе:</h2>
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>Название</th>
+                <th>Количество</th>
+                <th>Цена</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for product in cartProducts %}
+                <tr>
+                    <td>{{ product.product_name }}</td>
+                    <td>{{ product.amount }}</td>
+                    <td>{{ product.product_price }} руб.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Доставка:</h2>
+        <p>Способ доставки: {{ cart.deliveryServiceId }}</p>
+        <p>Стоимость доставки: {{ cart.deliveryPrice }} руб.</p>
+        <p>Срок доставки: {{ cart.deliveryMinDays }} - {{ cart.deliveryMaxDays }} дней</p>
+
+        <h2>Оплата:</h2>
+        <p>Способ оплаты: {{ cart.paymentServiceId }}</p>
+
+        <h2>Сумма: {{ cart.totalPaymentSum }} руб.</h2>
+    </div>
+{% endblock %}

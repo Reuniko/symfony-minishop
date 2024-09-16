@@ -86,6 +86,18 @@ class Cart
         return $this;
     }
 
+    public function getPaymentServiceId(): ?int
+    {
+        return $this->paymentServiceId;
+    }
+
+    public function setPaymentServiceId(?int $paymentServiceId): static
+    {
+        $this->paymentServiceId = $paymentServiceId;
+        return $this;
+    }
+
+
     public function getDeliveryPrice(): ?string
     {
         return $this->deliveryPrice;

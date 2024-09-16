@@ -9,6 +9,31 @@
         <h1>Выберите способ оплаты</h1>
         <hr>
 
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>Название</th>
+                <th>Выбор</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for paymentService in paymentServices %}
+                <tr>
+                    <td>{{ paymentService.name }}</td>
+                    <td>
+                        <form method="post" action="{{ path('app_cart_payment_confirm') }}">
+                            <button
+                                    type="submit"
+                                    class="btn btn-success"
+                                    name="paymentId"
+                                    value="{{ paymentService.id }}"
+                            >Выбрать</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
 
     </div>
 {% endblock %}

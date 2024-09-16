@@ -5,10 +5,12 @@ namespace App\Controller;
 use App\Entity\Cart;
 use App\Entity\CartProduct;
 use App\Entity\DeliveryService;
+use App\Entity\PaymentService;
 use App\Entity\Product;
 use App\Repository\CartProductRepository;
 use App\Repository\CartRepository;
 use App\Repository\DeliveryServiceRepository;
+use App\Repository\PaymentServiceRepository;
 use App\Repository\ProductRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -25,6 +27,7 @@ class MainController extends AbstractController
         private CartRepository            $cartRepository,
         private CartProductRepository     $cartProductRepository,
         private DeliveryServiceRepository $deliveryServiceRepository,
+        private PaymentServiceRepository  $paymentServiceRepository,
         private HttpClientInterface       $httpClient,
     )
     {
@@ -381,16 +384,75 @@ class MainController extends AbstractController
         $errors = [];
 
         $referrer = $request->headers->get('referer');
-        if (!$referrer || !str_contains($referrer, '/checkout/delivery/')) {
+        if (!$referrer || !str_contains($referrer, '/checkout/delivery')) {
             return $this->redirectToRoute('app_cart');
         }
 
-        $paymentServices = [];
+        $paymentServices = $this->paymentServiceRepository->findAll();
+        $this->debug($paymentServices, '$paymentServices');
 
-        $this->debug($paymentServices, '$deliveryServices');
         return $this->render('main/payment.html.twig', [
             'paymentServices' => $paymentServices,
             'errors' => $errors,
+        ]);
+    }
+
+    #[Route('/checkout/payment/', name: 'app_cart_payment_confirm', methods: ['POST'])]
+    public function appCartPaymentConfirm(Request $request): Response
+    {
+        if (!$this->getUser()) {
+            return $this->redirectToRoute('app_main');
+        }
+
+        $errors = [];
+
+        $cart = $this->getUserCart();
+        $this->debug($cart, '$cart');
+
+        $paymentId = $request->request->get('paymentId');
+        $this->debug($paymentId, '$paymentId');
+        /**@var PaymentService $paymentService */
+        $paymentService = $this->paymentServiceRepository->find($paymentId);
+        $this->debug($paymentService, '$paymentService');
+
+        $cart->setPaymentServiceId($paymentService->getId());
+        $cart->setPay(true);
+        $this->entityManager->persist($cart);
+        $this->entityManager->flush();
+
+        return $this->redirectToRoute('app_cart_summary');
+    }
+
+    #[Route('/checkout/summary/', name: 'app_cart_summary', methods: ['GET'])]
+    public function appCartSummary(Request $request): Response
+    {
+        if (!$this->getUser()) {
+            return $this->redirectToRoute('app_main');
+        }
+
+        $cart = $this->cartRepository->findOneBy([
+            'userId' => $this->getUser()->getId(),
+            'isPay' => 1,
+        ], ['id' => 'desc']);
+//        $cart = $this->cartRepository->createQueryBuilder('c')
+//            ->where('c.userId = :userId')
+//            ->andWhere('c.isPay = 1')
+//            ->leftJoin('c.deliveryServiceId', 'ds')
+//            ->leftJoin('c.paymentServiceId', 'ps')
+//            ->orderBy('c.id', 'DESC')
+//            ->setParameter('userId', $this->getUser()->getId())
+//            ->getQuery()
+//            ->getOneOrNullResult();
+        $this->debug($cart, '$cart');
+
+        $cartProducts = $this->getCartProducts($cart->getId());
+        $this->debug($cartProducts, '$cartProducts');
+
+
+        //return new Response('Hello, World!', Response::HTTP_OK);
+        return $this->render('main/summary.html.twig', [
+            'cart' => $cart,
+            'cartProducts' => $cartProducts,
         ]);
     }
 }
