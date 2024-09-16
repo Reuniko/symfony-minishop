@@ -61,7 +61,7 @@ class MainController extends AbstractController
 
 
     #[Route('/', name: 'app_add_to_cart', methods: ['POST'])]
-    public function add_to_cart(
+    public function addToCart(
         Request                $request,
         ProductRepository      $productRepository,
         CartRepository         $cartRepository,
@@ -176,7 +176,7 @@ class MainController extends AbstractController
     }
 
     #[Route('/checkout', name: 'app_cart', methods: ['GET'])]
-    public function app_cart(
+    public function appCart(
         Request                $request,
         ProductRepository      $productRepository,
         CartRepository         $cartRepository,
@@ -313,7 +313,7 @@ class MainController extends AbstractController
     }
 
     #[Route('/checkout/delivery/', name: 'app_cart_delivery', methods: ['GET'])]
-    public function app_cart_delivery(Request $request): Response
+    public function appCartDelivery(Request $request): Response
     {
         if (!$this->getUser()) {
             return $this->redirectToRoute('app_main');
@@ -342,7 +342,7 @@ class MainController extends AbstractController
     }
 
     #[Route('/checkout/delivery/', name: 'app_cart_delivery_confirm', methods: ['POST'])]
-    public function app_cart_delivery_confirm(Request $request): Response
+    public function appCartDeliveryConfirm(Request $request): Response
     {
         if (!$this->getUser()) {
             return $this->redirectToRoute('app_main');
@@ -372,7 +372,7 @@ class MainController extends AbstractController
     }
 
     #[Route('/checkout/payment/', name: 'app_cart_payment', methods: ['GET'])]
-    public function app_cart_payment(Request $request): Response
+    public function appCartPayment(Request $request): Response
     {
         if (!$this->getUser()) {
             return $this->redirectToRoute('app_main');
