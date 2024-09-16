@@ -269,6 +269,8 @@ class MainController extends AbstractController
             return $this->redirectToRoute('app_main');
         }
 
+        $errors = [];
+
         $referrer = $request->headers->get('referer');
         if (!$referrer || !str_contains($referrer, '/checkout')) {
             return $this->redirectToRoute('app_cart');
@@ -296,24 +298,31 @@ class MainController extends AbstractController
                     break;
             }
 
-            $response = $this->httpClient->request(
-                'POST',
-                $apiEndpoint,
-                [
-                    'headers' => $headers,
-                    'body' => json_encode($requestData),
-                    'timeout' => 1,
-                ]
-            );
+            try {
+                $response = $this->httpClient->request(
+                    'POST',
+                    $apiEndpoint,
+                    [
+                        'headers' => $headers,
+                        'body' => json_encode($requestData),
+                        'timeout' => 1,
+                    ]
+                );
 
-            $responseData = json_decode($response->getContent(), true);
+                $responseData = json_decode($response->getContent(), true);
 
-            if ($responseData['status'] === true || $responseData['status'] === 200) {
-                $deliveryService->price = $responseData['data']['price'];
-                $deliveryService->minDays = $responseData['data']['delivery_min_days'];
-                $deliveryService->maxDays = $responseData['data']['delivery_max_days'];
-            } else {
-                $this->addFlash('error', 'Не удалось получить данные о доставке от ' . $deliveryService->getName());
+                if ($responseData['status'] === true || $responseData['status'] === 200) {
+                    $deliveryService->price = $responseData['data']['price'];
+                    $deliveryService->minDays = $responseData['data']['delivery_min_days'];
+                    $deliveryService->maxDays = $responseData['data']['delivery_max_days'];
+                } else {
+                    throw new \Exception("Статус ответа - {$responseData['status']}");
+                }
+            } catch (\Exception $error) {
+                $deliveryService->price = '???';
+                $deliveryService->minDays = '???';
+                $deliveryService->maxDays = '???';
+                $errors[] = 'Не удалось получить данные о доставке от ' . $deliveryService->getName() . ': ' . $error->getMessage();
             }
         }
 
@@ -321,6 +330,7 @@ class MainController extends AbstractController
 
         return $this->render('main/delivery.html.twig', [
             'deliveryServices' => $deliveryServices,
+            'errors' => $errors,
         ]);
     }
 }
