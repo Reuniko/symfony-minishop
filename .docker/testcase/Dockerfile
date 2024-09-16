@@ -1,8 +1,11 @@
 FROM php:8.2.20-apache
 
-COPY --chmod=777 ./entrypoint.sh /var/www/html/entrypoint.sh
+COPY --chmod=777 ./entrypoint.sh /entrypoint.sh
+WORKDIR /var/www/html
 
-RUN apt-get update && apt-get install -y git libzip-dev && docker-php-ext-configure zip
+RUN apt-get update && apt-get install -y git libzip-dev libpq-dev && \
+  docker-php-ext-install pdo_pgsql pgsql && \
+  docker-php-ext-configure zip
 
 COPY ./config.conf /etc/apache2/sites-enabled/000-default.conf
 RUN a2enmod rewrite && \
