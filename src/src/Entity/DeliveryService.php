@@ -23,6 +23,7 @@ class DeliveryService
     public string $price;
     public string $minDays;
     public string $maxDays;
+    public string $error;
 
     public function getId(): ?int
     {

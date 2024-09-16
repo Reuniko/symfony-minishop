@@ -31,7 +31,14 @@
                         дней
                     </td>
                     <td>
-                        <button class="btn btn-success">Выбрать</button>
+                        <form method="post" action="{{ path('app_cart_delivery_confirm') }}">
+                            <button
+                                    type="submit"
+                                    class="btn btn-success"
+                                    name="deliveryId"
+                                    value="{{ deliveryService.id }}"
+                            >Выбрать</button>
+                        </form>
                     </td>
                 </tr>
             {% endfor %}

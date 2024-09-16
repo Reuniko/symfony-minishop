@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Cart;
 use App\Entity\CartProduct;
+use App\Entity\DeliveryService;
 use App\Entity\Product;
 use App\Repository\CartProductRepository;
 use App\Repository\CartRepository;
@@ -262,7 +263,56 @@ class MainController extends AbstractController
         return $this->redirectToRoute('app_cart');
     }
 
-    #[Route('/checkout/delivery/', name: 'app_cart_delivery')]
+    private function getDeliveryInfo(DeliveryService $deliveryService, string $weight)
+    {
+        $apiEndpoint = "http://localhost:8888/delivery/{$deliveryService->getCode()}";
+        $requestData = [];
+        $headers = ['Content-Type' => 'application/json'];
+        switch ($deliveryService->getCode()) {
+            case 'cdek':
+                $requestData = [
+                    'username' => 'cdek-user-01',
+                    'password' => '123456789',
+                    'weight' => $weight,
+                ];
+                break;
+            case 'fivepost':
+                $headers['apiKey'] = '448ed7416fce2cb66c285d182b1ba3df1e90016d';
+                $requestData = [
+                    'weight' => $weight,
+                ];
+                break;
+        }
+
+        try {
+            $response = $this->httpClient->request(
+                'POST',
+                $apiEndpoint,
+                [
+                    'headers' => $headers,
+                    'body' => json_encode($requestData),
+                    'timeout' => 1,
+                ]
+            );
+
+            $responseData = json_decode($response->getContent(), true);
+
+            if ($responseData['status'] === true || $responseData['status'] === 200) {
+                $deliveryService->price = $responseData['data']['price'];
+                $deliveryService->minDays = $responseData['data']['delivery_min_days'];
+                $deliveryService->maxDays = $responseData['data']['delivery_max_days'];
+            } else {
+                throw new \Exception("Статус ответа - {$responseData['status']}");
+            }
+        } catch (\Exception $error) {
+            $deliveryService->price = '???';
+            $deliveryService->minDays = '???';
+            $deliveryService->maxDays = '???';
+            $deliveryService->error = 'Не удалось получить данные о доставке от ' . $deliveryService->getName() . ': ' . $error->getMessage();
+        }
+    }
+
+    #[Route('/checkout/delivery/', name: 'app_cart_delivery', methods: ['GET'])]
     public function app_cart_delivery(Request $request): Response
     {
         if (!$this->getUser()) {
@@ -277,59 +327,69 @@ class MainController extends AbstractController
         }
 
         $deliveryServices = $this->deliveryServiceRepository->findAll();
+        $cart = $this->getUserCart();
+        $this->debug($cart, '$cart');
 
         foreach ($deliveryServices as $deliveryService) {
-            $apiEndpoint = "http://localhost:8888/delivery/{$deliveryService->getCode()}";
-            $requestData = [];
-            $headers = ['Content-Type' => 'application/json'];
-            switch ($deliveryService->getCode()) {
-                case 'cdek':
-                    $requestData = [
-                        'username' => 'cdek-user-01',
-                        'password' => '123456789',
-                        'weight' => '5',
-                    ];
-                    break;
-                case 'fivepost':
-                    $headers['apiKey'] = '448ed7416fce2cb66c285d182b1ba3df1e90016d';
-                    $requestData = [
-                        'weight' => '50',
-                    ];
-                    break;
-            }
-
-            try {
-                $response = $this->httpClient->request(
-                    'POST',
-                    $apiEndpoint,
-                    [
-                        'headers' => $headers,
-                        'body' => json_encode($requestData),
-                        'timeout' => 1,
-                    ]
-                );
-
-                $responseData = json_decode($response->getContent(), true);
-
-                if ($responseData['status'] === true || $responseData['status'] === 200) {
-                    $deliveryService->price = $responseData['data']['price'];
-                    $deliveryService->minDays = $responseData['data']['delivery_min_days'];
-                    $deliveryService->maxDays = $responseData['data']['delivery_max_days'];
-                } else {
-                    throw new \Exception("Статус ответа - {$responseData['status']}");
-                }
-            } catch (\Exception $error) {
-                $deliveryService->price = '???';
-                $deliveryService->minDays = '???';
-                $deliveryService->maxDays = '???';
-                $errors[] = 'Не удалось получить данные о доставке от ' . $deliveryService->getName() . ': ' . $error->getMessage();
-            }
+            $this->getDeliveryInfo($deliveryService, 5);
         }
 
         $this->debug($deliveryServices, '$deliveryServices');
-
         return $this->render('main/delivery.html.twig', [
             'deliveryServices' => $deliveryServices,
+            'errors' => $errors,
+        ]);
+    }
+
+    #[Route('/checkout/delivery/', name: 'app_cart_delivery_confirm', methods: ['POST'])]
+    public function app_cart_delivery_confirm(Request $request): Response
+    {
+        if (!$this->getUser()) {
+            return $this->redirectToRoute('app_main');
+        }
+
+        $errors = [];
+
+        $cart = $this->getUserCart();
+        $this->debug($cart, '$cart');
+
+        $deliveryId = $request->request->get('deliveryId');
+        $this->debug($deliveryId, '$deliveryId');
+        /**@var DeliveryService $deliveryService */
+        $deliveryService = $this->deliveryServiceRepository->find($deliveryId);
+        $this->debug($deliveryService, '$deliveryService');
+        $this->getDeliveryInfo($deliveryService, 5);
+        $this->debug($deliveryService, '$deliveryService');
+
+        $cart->setDeliveryServiceId($deliveryService->getId());
+        $cart->setDeliveryPrice($deliveryService->price);
+        $cart->setDeliveryMinDays($deliveryService->minDays);
+        $cart->setDeliveryMaxDays($deliveryService->maxDays);
+        $this->entityManager->persist($cart);
+        $this->entityManager->flush();
+
+        return $this->redirectToRoute('app_cart_payment');
+    }
+
+    #[Route('/checkout/payment/', name: 'app_cart_payment', methods: ['GET'])]
+    public function app_cart_payment(Request $request): Response
+    {
+        if (!$this->getUser()) {
+            return $this->redirectToRoute('app_main');
+        }
+
+        $errors = [];
+
+        $referrer = $request->headers->get('referer');
+        if (!$referrer || !str_contains($referrer, '/checkout/delivery/')) {
+            return $this->redirectToRoute('app_cart');
+        }
+
+        $paymentServices = [];
+
+        $this->debug($paymentServices, '$deliveryServices');
+        return $this->render('main/payment.html.twig', [
+            'paymentServices' => $paymentServices,
             'errors' => $errors,
         ]);
     }
