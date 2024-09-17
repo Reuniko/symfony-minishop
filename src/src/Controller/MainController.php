@@ -317,6 +317,31 @@ class MainController extends AbstractController
         }
     }
 
+    private function getCurrentCartWeight(): string
+    {
+        $result = $this->cartProductRepository->createQueryBuilder('cp')
+            ->select('sum(cp.amount * p.weight) as weight')
+            ->where('c.userId = :userId')
+            ->andWhere('c.isPay = 0')
+            ->leftJoin(
+                'App\Entity\Cart',
+                'c',
+                \Doctrine\ORM\Query\Expr\Join::WITH,
+                'cp.cartId = c.id'
+            )
+            ->leftJoin(
+                'App\Entity\Product',
+                'p',
+                \Doctrine\ORM\Query\Expr\Join::WITH,
+                'cp.productId = p.id'
+            )
+            ->setParameter('userId', $this->getUser()->getId())
+            ->getQuery()
+            ->getOneOrNullResult();
+        $this->debug($result, 'weight result');
+        return $result['weight'];
+    }
+
     #[Route('/checkout/delivery/', name: 'app_cart_delivery', methods: ['GET'])]
     public function appCartDelivery(Request $request): Response
     {
@@ -336,7 +361,7 @@ class MainController extends AbstractController
         $this->debug($cart, '$cart');
 
         foreach ($deliveryServices as $deliveryService) {
-            $this->getDeliveryInfo($deliveryService, 5);
+            $this->getDeliveryInfo($deliveryService, $this->getCurrentCartWeight());
         }
 
         $this->debug($deliveryServices, '$deliveryServices');
@@ -363,7 +388,7 @@ class MainController extends AbstractController
         /**@var DeliveryService $deliveryService */
         $deliveryService = $this->deliveryServiceRepository->find($deliveryId);
         $this->debug($deliveryService, '$deliveryService');
-        $this->getDeliveryInfo($deliveryService, 5);
+        $this->getDeliveryInfo($deliveryService, $this->getCurrentCartWeight());
         $this->debug($deliveryService, '$deliveryService');
 
         $cart->setDeliveryServiceId($deliveryService->getId());
