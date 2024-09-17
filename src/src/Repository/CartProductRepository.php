@@ -40,6 +40,56 @@ class CartProductRepository extends ServiceEntityRepository
             ->getQuery()->getResult();
     }
 
+    public function getCurrentCartTotalWeight(int $userId): string
+    {
+        $result = $this->createQueryBuilder('cp')
+            ->select('sum(cp.amount * p.weight) as weight')
+            ->where('c.userId = :userId')
+            ->andWhere('c.isPay = 0')
+            ->leftJoin(
+                'App\Entity\Cart',
+                'c',
+                \Doctrine\ORM\Query\Expr\Join::WITH,
+                'cp.cartId = c.id'
+            )
+            ->leftJoin(
+                'App\Entity\Product',
+                'p',
+                \Doctrine\ORM\Query\Expr\Join::WITH,
+                'cp.productId = p.id'
+            )
+            ->setParameter('userId', $userId)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+        return $result['weight'];
+    }
+
+    public function getCurrentCartTotalPrice(int $userId): string
+    {
+        $result = $this->createQueryBuilder('cp')
+            ->select('sum(cp.amount * p.price) as price')
+            ->where('c.userId = :userId')
+            ->andWhere('c.isPay = 0')
+            ->leftJoin(
+                'App\Entity\Cart',
+                'c',
+                \Doctrine\ORM\Query\Expr\Join::WITH,
+                'cp.cartId = c.id'
+            )
+            ->leftJoin(
+                'App\Entity\Product',
+                'p',
+                \Doctrine\ORM\Query\Expr\Join::WITH,
+                'cp.productId = p.id'
+            )
+            ->setParameter('userId', $userId)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+        return $result['price'];
+    }
+
     //    /**
     //     * @return CartProduct[] Returns an array of CartProduct objects
     //     */
