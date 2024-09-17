@@ -23,7 +23,7 @@ services:
     build: .docker/testcase
     entrypoint: ["sh", "/entrypoint.sh"]
     volumes:
-      - ./src:/var/www/html:rw
+      - ./src:/var/www/html:cached
     networks:
       - testnetwork
     ports:
