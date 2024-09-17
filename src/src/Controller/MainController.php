@@ -132,7 +132,7 @@ class MainController extends AbstractController
      */
     public function debug($data = [], $title = '', $mode = 'textarea', $target = '/debug.txt')
     {
-        //return;
+        return;
         if ($mode === 'textarea') {
             echo "<textarea class='debug' data-debug='{$title}' style='
 				display: none; 
@@ -241,8 +241,8 @@ class MainController extends AbstractController
 
     private function getDeliveryInfo(DeliveryService $deliveryService, string $weight)
     {
-        $apiEndpoint = "http://localhost:8888/delivery/{$deliveryService->getCode()}";
-        //$apiEndpoint = "http://container-stub/delivery/{$deliveryService->getCode()}";
+        //$apiEndpoint = "http://localhost:8888/delivery/{$deliveryService->getCode()}";
+        $apiEndpoint = "http://container-stub/delivery/{$deliveryService->getCode()}";
         $requestData = [];
         $headers = ['Content-Type' => 'application/json'];
         switch ($deliveryService->getCode()) {
