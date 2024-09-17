@@ -132,7 +132,7 @@ class MainController extends AbstractController
      */
     public function debug($data = [], $title = '', $mode = 'textarea', $target = '/debug.txt')
     {
-        return;
+        //return;
         if ($mode === 'textarea') {
             echo "<textarea class='debug' data-debug='{$title}' style='
 				display: none; 
@@ -269,8 +269,8 @@ class MainController extends AbstractController
 
     private function getDeliveryInfo(DeliveryService $deliveryService, string $weight)
     {
-        //$apiEndpoint = "http://localhost:8888/delivery/{$deliveryService->getCode()}";
-        $apiEndpoint = "http://container-stub/delivery/{$deliveryService->getCode()}";
+        $apiEndpoint = "http://localhost:8888/delivery/{$deliveryService->getCode()}";
+        //$apiEndpoint = "http://container-stub/delivery/{$deliveryService->getCode()}";
         $requestData = [];
         $headers = ['Content-Type' => 'application/json'];
         switch ($deliveryService->getCode()) {
@@ -432,26 +432,49 @@ class MainController extends AbstractController
             return $this->redirectToRoute('app_main');
         }
 
-        $cart = $this->cartRepository->findOneBy([
-            'userId' => $this->getUser()->getId(),
-            'isPay' => 1,
-        ], ['id' => 'desc']);
-//        $cart = $this->cartRepository->createQueryBuilder('c')
-//            ->where('c.userId = :userId')
-//            ->andWhere('c.isPay = 1')
-//            ->leftJoin('c.deliveryServiceId', 'ds')
-//            ->leftJoin('c.paymentServiceId', 'ps')
-//            ->orderBy('c.id', 'DESC')
-//            ->setParameter('userId', $this->getUser()->getId())
-//            ->getQuery()
-//            ->getOneOrNullResult();
+//        $cart = $this->cartRepository->findOneBy([
+//            'userId' => $this->getUser()->getId(),
+//            'isPay' => 1,
+//        ], ['id' => 'desc']);
+        $cart = $this->cartRepository->createQueryBuilder('c')
+            ->select('
+            c.id,
+            c.userId,
+            c.deliveryPrice,
+            c.deliveryMinDays,
+            c.deliveryMaxDays,
+            c.createdAt,
+            c.totalPaymentSum,
+            ds.id as deliveryServiceId,
+            ds.name as deliveryServiceName,
+            ps.id as paymentServiceId,
+            ps.name as paymentServiceName
+            ')
+            ->where('c.userId = :userId')
+            ->andWhere('c.isPay = 1')
+            //->leftJoin('c.deliveryServiceId', 'ds') // no idea
+            ->leftJoin(
+                'App\Entity\DeliveryService',
+                'ds',
+                \Doctrine\ORM\Query\Expr\Join::WITH,
+                'c.deliveryServiceId = ds.id'
+            )
+            //->leftJoin('c.paymentServiceId', 'ps') // no idea
+            ->leftJoin(
+                'App\Entity\PaymentService',
+                'ps',
+                \Doctrine\ORM\Query\Expr\Join::WITH,
+                'c.paymentServiceId = ps.id'
+            )
+            ->orderBy('c.id', 'DESC')
+            ->setParameter('userId', $this->getUser()->getId())
+            ->getQuery()
+            ->getOneOrNullResult();
         $this->debug($cart, '$cart');
 
-        $cartProducts = $this->getCartProducts($cart->getId());
+        $cartProducts = $this->getCartProducts($cart['id']);
         $this->debug($cartProducts, '$cartProducts');
 
-
-        //return new Response('Hello, World!', Response::HTTP_OK);
         return $this->render('main/summary.html.twig', [
             'cart' => $cart,
             'cartProducts' => $cartProducts,

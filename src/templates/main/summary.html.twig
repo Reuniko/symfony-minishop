@@ -27,12 +27,12 @@
         </table>
 
         <h2>Доставка:</h2>
-        <p>Способ доставки: {{ cart.deliveryServiceId }}</p>
+        <p>Способ доставки: {{ cart.deliveryServiceName }}</p>
         <p>Стоимость доставки: {{ cart.deliveryPrice }} руб.</p>
         <p>Срок доставки: {{ cart.deliveryMinDays }} - {{ cart.deliveryMaxDays }} дней</p>
 
         <h2>Оплата:</h2>
-        <p>Способ оплаты: {{ cart.paymentServiceId }}</p>
+        <p>Способ оплаты: {{ cart.paymentServiceName }}</p>
 
         <h2>Сумма: {{ cart.totalPaymentSum }} руб.</h2>
     </div>
