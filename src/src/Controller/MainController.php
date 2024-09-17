@@ -195,7 +195,7 @@ class MainController extends AbstractController
         $message = '';
 
         $cart = $this->getUserCart();
-        $cartProducts = $this->getCartProducts($cart->getId());
+        $cartProducts = $this->cartProductRepository->findByCartId($cart->getId());
 
         //$this->debug($cart);
         $this->debug($cartProducts);
@@ -211,34 +211,6 @@ class MainController extends AbstractController
             'message' => $message,
             'totalPrice' => $totalPrice,
         ]);
-    }
-
-    private function getCartProducts(int $cartId): array
-    {
-        $queryBuilder = $this->entityManager->createQueryBuilder();
-        $queryBuilder
-            ->select('
-                cp.id AS cart_product_id,
-                cp.amount,
-                p.id AS product_id,
-                p.name AS product_name,
-                p.price AS product_price,
-                p.weight AS product_weight
-            ')
-            ->from('App\Entity\CartProduct', 'cp')
-            //->leftJoin('cp.product', 'p') // no idea
-            ->leftJoin(
-                'App\Entity\Product',
-                'p',
-                \Doctrine\ORM\Query\Expr\Join::WITH,
-                'cp.productId = p.id'
-            )
-            ->where('cp.cartId = :cartId')
-            ->setParameter('cartId', $cartId);
-
-        $result = $queryBuilder->getQuery()->getResult();
-
-        return $result;
     }
 
     #[Route('/checkout/delete/{cartProductId}', name: 'app_cart_delete', methods: ['POST'])]
@@ -526,7 +498,7 @@ class MainController extends AbstractController
             ->getOneOrNullResult();
         $this->debug($cart, '$cart');
 
-        $cartProducts = $this->getCartProducts($cart['id']);
+        $cartProducts = $this->cartProductRepository->findByCartId($cart['id']);
         $this->debug($cartProducts, '$cartProducts');
 
         return $this->render('main/summary.html.twig', [

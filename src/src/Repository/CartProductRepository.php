@@ -16,6 +16,30 @@ class CartProductRepository extends ServiceEntityRepository
         parent::__construct($registry, CartProduct::class);
     }
 
+    public function findByCartId(int $cartId): array
+    {
+        return $this->createQueryBuilder('cp')
+            ->select('
+                cp.id AS cart_product_id,
+                cp.amount,
+                p.id AS product_id,
+                p.name AS product_name,
+                p.price AS product_price,
+                p.weight AS product_weight
+            ')
+            //->from('App\Entity\CartProduct', 'cp')
+            //->leftJoin('cp.product', 'p') // no idea
+            ->leftJoin(
+                'App\Entity\Product',
+                'p',
+                \Doctrine\ORM\Query\Expr\Join::WITH,
+                'cp.productId = p.id'
+            )
+            ->where('cp.cartId = :cartId')
+            ->setParameter('cartId', $cartId)
+            ->getQuery()->getResult();
+    }
+
     //    /**
     //     * @return CartProduct[] Returns an array of CartProduct objects
     //     */
