@@ -12,6 +12,8 @@ use App\Repository\CartRepository;
 use App\Repository\DeliveryServiceRepository;
 use App\Repository\PaymentServiceRepository;
 use App\Repository\ProductRepository;
+use App\Service\DeliveryCdek;
+use App\Service\DeliveryFivepost;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,6 +34,8 @@ class MainController extends AbstractController
         private PaymentServiceRepository  $paymentServiceRepository,
         private HttpClientInterface       $httpClient,
         private CacheInterface            $cache,
+        private DeliveryCdek              $deliveryCdek,
+        private DeliveryFivepost          $deliveryFivepost,
     )
     {
 
@@ -244,57 +248,20 @@ class MainController extends AbstractController
 
     private function getDeliveryInfo(DeliveryService $deliveryService, string $weight)
     {
-        //$apiEndpoint = "http://localhost:8888/delivery/{$deliveryService->getCode()}";
-        $apiEndpoint = "http://container-stub/delivery/{$deliveryService->getCode()}";
-        $requestData = [];
-        $headers = ['Content-Type' => 'application/json'];
+        $answer = [];
         switch ($deliveryService->getCode()) {
             case 'cdek':
-                $requestData = [
-                    'username' => 'cdek-user-01',
-                    'password' => '123456789',
-                    'weight' => $weight,
-                ];
+                $answer = $this->deliveryCdek->getPrice($weight);
                 break;
             case 'fivepost':
-                $headers['apiKey'] = '448ed7416fce2cb66c285d182b1ba3df1e90016d';
-                $requestData = [
-                    'weight' => $weight,
-                ];
+                $answer = $this->deliveryFivepost->getPrice($weight);
                 break;
         }
 
-        try {
-
-            $cacheKey = sprintf('delivery_info_%s_%s', $deliveryService->getCode(), $weight);
-            $responseData = $this->cache->get($cacheKey, function (ItemInterface $item) use ($apiEndpoint, $headers, $requestData) {
-                $item->expiresAfter(3600);
-                $response = $this->httpClient->request(
-                    'POST',
-                    $apiEndpoint,
-                    [
-                        'headers' => $headers,
-                        'body' => json_encode($requestData),
-                        'timeout' => 1,
-                    ]
-                );
-                $responseData = json_decode($response->getContent(), true);
-                return $responseData;
-            });
-
-            if ($responseData['status'] === true || $responseData['status'] === 200) {
-                $deliveryService->price = $responseData['data']['price'];
-                $deliveryService->minDays = $responseData['data']['delivery_min_days'];
-                $deliveryService->maxDays = $responseData['data']['delivery_max_days'];
-            } else {
-                throw new \Exception("Статус ответа - {$responseData['status']}");
-            }
-        } catch (\Exception $error) {
-            $deliveryService->price = '???';
-            $deliveryService->minDays = '???';
-            $deliveryService->maxDays = '???';
-            $deliveryService->error = 'Не удалось получить данные о доставке от ' . $deliveryService->getName() . ': ' . $error->getMessage();
-        }
+        $deliveryService->price = $answer['price'];
+        $deliveryService->minDays = $answer['minDays'];
+        $deliveryService->maxDays = $answer['maxDays'];
+        $deliveryService->error = $answer['error'];
     }
 
     #[Route('/checkout/delivery/', name: 'app_cart_delivery', methods: ['GET'])]

@@ -20,5 +20,16 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
+    App\Service\DeliveryCdek:
+        arguments:
+            $apiEndpoint: 'http://container-stub/delivery/cdek'
+            $username: 'cdek-user-01'
+            $password: '123456789'
+
+    App\Service\DeliveryFivepost:
+        arguments:
+            $apiEndpoint: 'http://container-stub/delivery/fivepost'
+            $apiKey: '448ed7416fce2cb66c285d182b1ba3df1e90016d'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
