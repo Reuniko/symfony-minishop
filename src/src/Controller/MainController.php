@@ -17,6 +17,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 
@@ -29,6 +31,7 @@ class MainController extends AbstractController
         private DeliveryServiceRepository $deliveryServiceRepository,
         private PaymentServiceRepository  $paymentServiceRepository,
         private HttpClientInterface       $httpClient,
+        private CacheInterface            $cache,
     )
     {
 
@@ -262,17 +265,22 @@ class MainController extends AbstractController
         }
 
         try {
-            $response = $this->httpClient->request(
-                'POST',
-                $apiEndpoint,
-                [
-                    'headers' => $headers,
-                    'body' => json_encode($requestData),
-                    'timeout' => 1,
-                ]
-            );
 
-            $responseData = json_decode($response->getContent(), true);
+            $cacheKey = sprintf('delivery_info_%s_%s', $deliveryService->getCode(), $weight);
+            $responseData = $this->cache->get($cacheKey, function (ItemInterface $item) use ($apiEndpoint, $headers, $requestData) {
+                $item->expiresAfter(3600);
+                $response = $this->httpClient->request(
+                    'POST',
+                    $apiEndpoint,
+                    [
+                        'headers' => $headers,
+                        'body' => json_encode($requestData),
+                        'timeout' => 1,
+                    ]
+                );
+                $responseData = json_decode($response->getContent(), true);
+                return $responseData;
+            });
 
             if ($responseData['status'] === true || $responseData['status'] === 200) {
                 $deliveryService->price = $responseData['data']['price'];
