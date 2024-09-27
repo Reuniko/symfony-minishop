@@ -19,12 +19,16 @@ class Cart
     private int $userId;
 
     #[ORM\Column(type: 'integer', nullable: true)]
-    #[ORM\ManyToOne(targetEntity: DeliveryService::class)]
     private ?int $deliveryServiceId = null;
 
+    #[ORM\ManyToOne(targetEntity: DeliveryService::class)]
+    private ?DeliveryService $deliveryService = null;
+
     #[ORM\Column(type: 'integer', nullable: true)]
-    #[ORM\ManyToOne(targetEntity: PaymentService::class)]
     private ?int $paymentServiceId = null;
+
+    #[ORM\ManyToOne(targetEntity: PaymentService::class)]
+    private ?PaymentService $paymentService = null;
 
     #[ORM\Column(type: 'integer', nullable: true)]
     private ?int $deliveryPrice = null;
@@ -97,6 +101,27 @@ class Cart
         return $this;
     }
 
+    public function getDeliveryService(): ?DeliveryService
+    {
+        return $this->deliveryService;
+    }
+
+    public function setDeliveryService(?DeliveryService $deliveryService): static
+    {
+        $this->deliveryService = $deliveryService;
+        return $this;
+    }
+
+    public function getPaymentService(): ?PaymentService
+    {
+        return $this->paymentService;
+    }
+
+    public function setPaymentService(?PaymentService $paymentService): static
+    {
+        $this->paymentService = $paymentService;
+        return $this;
+    }
 
     public function getDeliveryPrice(): ?string
     {
